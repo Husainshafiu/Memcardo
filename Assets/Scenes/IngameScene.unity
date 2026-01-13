@@ -131,7 +131,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 155863098}
-  - component: {fileID: 155863100}
   - component: {fileID: 155863099}
   m_Layer: 0
   m_Name: GameManager
@@ -167,6 +166,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e2450a3263f17c4495151507f6e8502, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  PreGameDuration: 2
   gridX: 4
   gridY: 4
   cardSpacing: 1.5
@@ -190,18 +190,6 @@ MonoBehaviour:
   mainCamera: {fileID: 570771124}
   cameraPadding: 1
   cameraOffset: {x: 0, y: 0}
---- !u!114 &155863100
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 155863097}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 065043c2de96d344287ad291265c65fd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &310543858
 GameObject:
   m_ObjectHideFlags: 0
