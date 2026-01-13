@@ -24,6 +24,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float cameraPadding = 2f;
     [SerializeField] private Vector2 cameraOffset = Vector2.zero;
+
+    private Card cardA = null;
+    private Card cardB = null;
+    private bool isProcessing = false;
     
     private Vector2 lastViewportSize;
     
@@ -67,6 +71,7 @@ public class GameManager : MonoBehaviour
         foreach (var card in cards)
         {
             card.FlipCard();
+            card.GameLock = false;
         }
     }
 
@@ -89,7 +94,7 @@ public class GameManager : MonoBehaviour
         {
             var texture = GetTexture(i);
             var color = GetColor(i);
-            var id = new Guid();
+            var id = Guid.NewGuid();
 
             data.Add(new CardData(texture, color, id));
             data.Add(new CardData(texture, color, id));
@@ -137,7 +142,7 @@ public class GameManager : MonoBehaviour
 
             if (card != null)
             {
-                card.Initialize(cardsData[index].Texture, cardsData[index].Color, cardsData[index].Id);
+                card.Initialize(cardsData[index].Texture, cardsData[index].Color, cardsData[index].Id, this);
             }
             index++;
         }
@@ -171,6 +176,58 @@ public class GameManager : MonoBehaviour
         );
     }
    
+    public void OnCardFlipped(Card card)
+    {
+        Debug.Log("OnCardFlipped: " + card.GetCardId());
+        // Prevent multiple cards being flipped during comparison
+        if (isProcessing) return;
+        
+        // First card flipped
+        if (cardA == null)
+        {
+            cardA = card;
+            Debug.Log("cardA: " + cardA.GetCardId());
+        }
+        // Second card flipped
+        else if (cardB == null && card != cardA)
+        {
+            cardB = card;
+            Debug.Log("cardB: " + cardB.GetCardId());
+            StartCoroutine(CheckMatch());
+        }
+    }
+    
+    private IEnumerator CheckMatch()
+    {
+        isProcessing = true;
+        // Wait a moment so player can see both cards
+        yield return new WaitForSeconds(1f);
+        
+        // Check if the cards match using their IDs
+        if (cardA.GetCardId() == cardB.GetCardId())
+        {
+            cardA.SetCompleted(true);
+            cardB.SetCompleted(true);
+            Debug.Log("Match found: " + cardA.GetCardId() + " and " + cardB.GetCardId());
+        }
+        else
+        {
+            cardA.FlipCard();
+            cardB.FlipCard();
+            Debug.Log("No match found: " + cardA.GetCardId() + " and " + cardB.GetCardId());
+        }
+        
+        // Reset for next pair
+        cardA = null;
+        cardB = null;
+        isProcessing = false;
+    }
+
+    public bool CanFlipCard()
+    {
+        return !isProcessing && (cardA == null || cardB == null);
+    }
+
     private readonly struct CardData
     {
         public readonly Texture2D Texture;

@@ -27,7 +27,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1101233558763211125}
   m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
-  m_LocalPosition: {x: 0, y: 0.6, z: 0}
+  m_LocalPosition: {x: 0, y: -0.2, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -108,6 +108,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4774287242017125607}
   - component: {fileID: 5370653860496790210}
+  - component: {fileID: 4873379802442493921}
   m_Layer: 0
   m_Name: Card
   m_TagString: Untagged
@@ -144,6 +145,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 065043c2de96d344287ad291265c65fd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  flipSpeed: 500
+--- !u!65 &4873379802442493921
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4774287242017125606}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 10, y: 10, z: 10}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &4774287243333664789
 GameObject:
   m_ObjectHideFlags: 0
@@ -171,7 +186,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4774287243333664789}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.69, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
