@@ -89,7 +89,7 @@ public class GameManager : MonoBehaviour
         {
             var texture = GetTexture(i);
             var color = GetColor(i);
-            var id = new  GUID();
+            var id = new Guid();
 
             data.Add(new CardData(texture, color, id));
             data.Add(new CardData(texture, color, id));
