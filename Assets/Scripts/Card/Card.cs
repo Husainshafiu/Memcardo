@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,8 +7,10 @@ public class Card : MonoBehaviour
 {
     [Header("Card Settings")]
     public float flipSpeed = 180f;
+
+    private Guid cardId = Guid.Empty;
     
-    public void Initialize(Texture2D texture, Color color)
+    public void Initialize(Texture2D texture, Color color, Guid Id)
     {
         //TODO:: Find a better way to get the child object. getting by name is not entirely reliable.
         Transform planeTransform = transform.Find("CardPlane");
@@ -25,6 +28,8 @@ public class Card : MonoBehaviour
                 }
             }
         }
+        
+        cardId = Id;
     }
 
     public void FlipCard()

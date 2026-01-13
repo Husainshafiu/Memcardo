@@ -1,5 +1,9 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
@@ -20,7 +24,9 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float cameraPadding = 2f;
     [SerializeField] private Vector2 cameraOffset = Vector2.zero;
-
+    
+    private Vector2 lastViewportSize;
+    
     private void OnValidate()
     {
         if (gridX * gridY % 2 != 0)
@@ -46,6 +52,9 @@ public class GameManager : MonoBehaviour
 
         var cardsData = CreateAndShuffleCardData(totalCards / 2);
         SpawnCards(cardsData);
+        
+        // fit the camera to the grid - on update check for screen size changes to retrigger
+        lastViewportSize = new Vector2(Screen.width, Screen.height);
         FitCameraToGrid();
         
         // Flip all cards after the game duration to begin the game
@@ -54,18 +63,22 @@ public class GameManager : MonoBehaviour
 
     void CallAllCardsToFlip()
     {
-        Card[] cards = GetComponentsInChildren<Card>();
-        Debug.Log($"Found {cards.Length} cards");
+        var cards = GetComponentsInChildren<Card>();
         foreach (var card in cards)
         {
-            Debug.Log($"Flipping card: {card.gameObject.name}");
             card.FlipCard();
         }
     }
 
     void Update()
     {
-        FitCameraToGrid();
+        // instead of doing every frame check changes in screen size to trigger camera size changes
+        var currentSize = new Vector2(Screen.width, Screen.height);
+        if (currentSize != lastViewportSize)
+        {
+            FitCameraToGrid();
+            lastViewportSize = currentSize;
+        }
     }
 
     private List<CardData> CreateAndShuffleCardData(int pairCount)
@@ -74,13 +87,14 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0; i < pairCount; i++)
         {
-            Texture2D texture = GetTexture(i);
-            Color color = GetColor(i);
+            var texture = GetTexture(i);
+            var color = GetColor(i);
+            var id = new  GUID();
 
-            data.Add(new CardData(texture, color));
-            data.Add(new CardData(texture, color));
+            data.Add(new CardData(texture, color, id));
+            data.Add(new CardData(texture, color, id));
         }
-
+        
         // Shuffle the cards around
         for (int i = 0; i < data.Count; i++)
         {
@@ -123,7 +137,7 @@ public class GameManager : MonoBehaviour
 
             if (card != null)
             {
-                card.Initialize(cardsData[index].Texture, cardsData[index].Color);
+                card.Initialize(cardsData[index].Texture, cardsData[index].Color, cardsData[index].Id);
             }
             index++;
         }
@@ -161,11 +175,13 @@ public class GameManager : MonoBehaviour
     {
         public readonly Texture2D Texture;
         public readonly Color Color;
+        public readonly Guid Id;
 
-        public CardData(Texture2D texture, Color color)
+        public CardData(Texture2D texture, Color color,  Guid id)
         {
             Texture = texture;
             Color = color;
+            Id = id;
         }
     }
 }
