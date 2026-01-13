@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Game Settings")]
+    [SerializeField] private float PreGameDuration = 2f;
+    
     [Header("Grid Settings")]
     [SerializeField] private int gridX = 4;
     [SerializeField] private int gridY = 4;
@@ -44,6 +47,20 @@ public class GameManager : MonoBehaviour
         var cardsData = CreateAndShuffleCardData(totalCards / 2);
         SpawnCards(cardsData);
         FitCameraToGrid();
+        
+        // Flip all cards after the game duration to begin the game
+        Invoke(nameof(CallAllCardsToFlip), PreGameDuration);
+    }
+
+    void CallAllCardsToFlip()
+    {
+        Card[] cards = GetComponentsInChildren<Card>();
+        Debug.Log($"Found {cards.Length} cards");
+        foreach (var card in cards)
+        {
+            Debug.Log($"Flipping card: {card.gameObject.name}");
+            card.FlipCard();
+        }
     }
 
     void Update()
@@ -101,14 +118,13 @@ public class GameManager : MonoBehaviour
                 0f,
                 z * cardSpacing - centerZ);
 
-            var cardObj = Instantiate(cardPrefab, pos, Quaternion.identity, transform);
+            var cardObj = Instantiate(cardPrefab, pos, Quaternion.Euler(0, 180, 0), transform);
             var card = cardObj.GetComponent<Card>();
 
             if (card != null)
             {
                 card.Initialize(cardsData[index].Texture, cardsData[index].Color);
             }
-
             index++;
         }
     }
@@ -124,13 +140,20 @@ public class GameManager : MonoBehaviour
 
         float width  = gridX * cardSpacing;
         float height = gridY * cardSpacing;
-        float maxSize = Mathf.Max(width, height);
+        
+        float fovRad = cam.fieldOfView * Mathf.Deg2Rad;
+        float aspectRatio = cam.aspect;
+        
+        float distanceForHeight = (height / 2f) / Mathf.Tan(fovRad / 2f);
+        float distanceForWidth = (width / 2f) / (Mathf.Tan(fovRad / 2f) * aspectRatio);
+        
+        float requiredDistance = Mathf.Max(distanceForHeight, distanceForWidth) + cameraPadding;
 
         Vector3 center = transform.position + new Vector3(cameraOffset.x, 0f, cameraOffset.y);
 
         cam.transform.SetPositionAndRotation(
-            center + Vector3.up * (maxSize + cameraPadding),
-            Quaternion.LookRotation(center - (center + Vector3.up * (maxSize + cameraPadding)))
+            center + Vector3.up * requiredDistance,
+            Quaternion.LookRotation(center - (center + Vector3.up * requiredDistance))
         );
     }
    
