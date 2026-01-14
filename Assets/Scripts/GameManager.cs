@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -32,6 +33,9 @@ public class GameManager : MonoBehaviour
     private int pairsNeededToWin = -1;
     private int currentMatchedPairs = -1;
     private Vector2 lastViewportSize;
+    
+    private TextMeshProUGUI scoreText;
+    private int score = 0;
     
     private void OnValidate()
     {
@@ -69,6 +73,10 @@ public class GameManager : MonoBehaviour
         // this sets the points needed to win and resets the current matched pairs for starting the game
         pairsNeededToWin = totalCards / 2;
         currentMatchedPairs = 0;
+        
+        //UI related code
+        scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshProUGUI>();
+        UpdateUI();
     }
 
     void CallAllCardsToFlip()
@@ -185,11 +193,18 @@ public class GameManager : MonoBehaviour
     public void OnCardFlipped(Card card)
     {
         if (IsCardInQueue(card)) return;
+        
         if (cardA == null)
         {
             cardA = card;
         }
-        else if (cardB == null && card != cardA)
+        else if (card == cardA)
+        {
+            // Same card clicked twice - deselect it by flipping back
+            cardA.EnsureFaceDown();
+            cardA = null;
+        }
+        else if (cardB == null)
         {
             cardB = card;
             
@@ -221,20 +236,42 @@ public class GameManager : MonoBehaviour
         // Check if the cards match using their IDs
         if (pairA.GetCardId() == pairB.GetCardId())
         {
+            // Ensure both cards are face up (they should be, but guarantee it)
+            pairA.EnsureFaceUp();
+            pairB.EnsureFaceUp();
+            
             pairA.SetCompleted(true);
             pairB.SetCompleted(true);
+            
             currentMatchedPairs++;
+            AddScore(10);
             CheckGameComplete();
         }
         else
         {
-            pairA.FlipCard();
-            pairB.FlipCard();
+            bool flipComplete = false;
+            int flipsCompleted = 0;
+            
+            // Ensure both cards flip back to face down state
+            pairA.EnsureFaceDown(() => {
+                flipsCompleted++;
+                if (flipsCompleted == 2) flipComplete = true;
+            });
+            
+            pairB.EnsureFaceDown(() => {
+                flipsCompleted++;
+                if (flipsCompleted == 2) flipComplete = true;
+            });
+            
+            // Wait until both flips complete
+            yield return new WaitUntil(() => flipComplete);
         }
         
         // Remove from queue
         processingQueue.Remove((pairA, pairB));
     }
+
+    
 
     private void CheckGameComplete()
     {
@@ -267,4 +304,22 @@ public class GameManager : MonoBehaviour
             Id = id;
         }
     }
+
+    #region Score
+
+    private void AddScore(int pointsToAdd)
+    {
+        score += pointsToAdd;
+        UpdateUI();
+    }
+
+    private void UpdateUI()
+    {
+        if (scoreText)
+        {
+            scoreText.SetText(score.ToString());
+        }
+    }
+
+    #endregion
 }

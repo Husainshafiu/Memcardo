@@ -3,12 +3,19 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum CardFaceState
+{
+    FaceDown,
+    FaceUp
+}
+
 public class Card : MonoBehaviour
 {
     [Header("Card Settings")]
     public float flipSpeed = 500f;
     private bool isFlipping = false;
     private bool isCompleted = false;
+    private CardFaceState faceState = CardFaceState.FaceDown;
 
     private GameManager gameManagerRef;
 
@@ -18,6 +25,7 @@ public class Card : MonoBehaviour
 
     private Guid cardId = Guid.Empty;
     public Guid GetCardId() { return cardId; }
+    public CardFaceState GetFaceState() { return faceState; }
     
     public void Initialize(Texture2D texture, Color color, Guid Id, GameManager gameManager)
     {
@@ -39,11 +47,32 @@ public class Card : MonoBehaviour
         }
         gameManagerRef = gameManager;
         cardId = Id;
+        faceState = CardFaceState.FaceUp;
     }
 
-    public void FlipCard()
+    public void FlipCard(Action onComplete = null)
     {
-        StartCoroutine(Flip());
+        StartCoroutine(Flip(onComplete));
+    }
+    
+    public void EnsureFaceDown(Action onComplete = null)
+    {
+        if (faceState == CardFaceState.FaceDown)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+        StartCoroutine(Flip(onComplete));
+    }
+    
+    public void EnsureFaceUp(Action onComplete = null)
+    {
+        if (faceState == CardFaceState.FaceUp)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+        StartCoroutine(Flip(onComplete));
     }
 
     private void OnMouseDown()
@@ -67,7 +96,7 @@ public class Card : MonoBehaviour
         gameManagerRef.OnCardFlipped(this);
     }
 
-    IEnumerator Flip()
+    IEnumerator Flip(Action onComplete = null)
     {
         isFlipping = true;
         var rotated = 0f;
@@ -80,7 +109,11 @@ public class Card : MonoBehaviour
             yield return null;
         }
         
+        // Toggle face state after flip completes
+        faceState = faceState == CardFaceState.FaceDown ? CardFaceState.FaceUp : CardFaceState.FaceDown;
+        
         isFlipping = false;
+        onComplete?.Invoke();
     }
     
     public void SetCompleted(bool completed)
