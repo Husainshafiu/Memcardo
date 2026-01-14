@@ -24,7 +24,9 @@ public class Card : MonoBehaviour
     public bool GameLock = true;
 
     private Guid cardId = Guid.Empty;
+    private Color cardColor;
     public Guid GetCardId() { return cardId; }
+    public Color GetCardColor() { return cardColor; }
     public CardFaceState GetFaceState() { return faceState; }
     
     public void Initialize(Texture2D texture, Color color, Guid Id, GameManager gameManager)
@@ -47,6 +49,7 @@ public class Card : MonoBehaviour
         }
         gameManagerRef = gameManager;
         cardId = Id;
+        cardColor = color;
         faceState = CardFaceState.FaceUp;
     }
 

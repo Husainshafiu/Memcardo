@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
@@ -38,6 +39,14 @@ public class GameManager : MonoBehaviour
     private TextMeshProUGUI scoreText;
     private int score = 0;
     
+    private List<Card> allCards = new List<Card>();
+    private List<int> cardTextureIndices = new List<int>();
+
+    public TMP_InputField GridXInput;
+    public TMP_InputField GridYInput;
+    public TextMeshProUGUI completedText;
+    
+    
     private void OnValidate()
     {
         if (gridX * gridY % 2 != 0)
@@ -54,6 +63,29 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        //UI related code
+        scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshProUGUI>();
+        
+        if (completedText)
+            completedText.gameObject.SetActive(false);
+        
+        // Check if save exists
+        if (SaveManager.SaveExists())
+        {
+            LoadGame();
+        }
+        else
+        {
+            StartNewGame();
+        }
+        
+        // fit the camera to the grid - on update check for screen size changes to retrigger
+        lastViewportSize = new Vector2(Screen.width, Screen.height);
+        FitCameraToGrid();
+    }
+    
+    private void StartNewGame()
+    {
         int totalCards = gridX * gridY;
         if (totalCards % 2 != 0)
         {
@@ -64,20 +96,16 @@ public class GameManager : MonoBehaviour
         var cardsData = CreateAndShuffleCardData(totalCards / 2);
         SpawnCards(cardsData);
         
-        // fit the camera to the grid - on update check for screen size changes to retrigger
-        lastViewportSize = new Vector2(Screen.width, Screen.height);
-        FitCameraToGrid();
-        
         // Flip all cards after the game duration to begin the game
         Invoke(nameof(CallAllCardsToFlip), preGameDuration);
 
         // this sets the points needed to win and resets the current matched pairs for starting the game
         pairsNeededToWin = totalCards / 2;
         currentMatchedPairs = 0;
+        score = 0;
         
-        //UI related code
-        scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshProUGUI>();
         UpdateUI();
+        FitCameraToGrid();
     }
 
     void CallAllCardsToFlip()
@@ -104,15 +132,20 @@ public class GameManager : MonoBehaviour
     private List<CardData> CreateAndShuffleCardData(int pairCount)
     {
         var data = new List<CardData>(pairCount * 2);
+        cardTextureIndices.Clear();
 
         for (int i = 0; i < pairCount; i++)
         {
+            int textureIndex = i % (cardTextures != null && cardTextures.Length > 0 ? cardTextures.Length : 1);
             var texture = GetTexture(i);
             var color = GetColor(i);
             var id = Guid.NewGuid();
 
-            data.Add(new CardData(texture, color, id));
-            data.Add(new CardData(texture, color, id));
+            data.Add(new CardData(texture, color, id, textureIndex));
+            data.Add(new CardData(texture, color, id, textureIndex));
+            
+            cardTextureIndices.Add(textureIndex);
+            cardTextureIndices.Add(textureIndex);
         }
         
         // Shuffle the cards around
@@ -122,6 +155,10 @@ public class GameManager : MonoBehaviour
             CardData temp = data[i];
             data[i] = data[randomIndex];
             data[randomIndex] = temp;
+            
+            int tempIndex = cardTextureIndices[i];
+            cardTextureIndices[i] = cardTextureIndices[randomIndex];
+            cardTextureIndices[randomIndex] = tempIndex;
         }
 
         return data;
@@ -143,6 +180,7 @@ public class GameManager : MonoBehaviour
         float centerZ = (gridY - 1) * cardSpacing * 0.5f;
 
         int index = 0;
+        allCards.Clear();
 
         for (int x = 0; x < gridX; x++)
         for (int z = 0; z < gridY; z++)
@@ -158,6 +196,7 @@ public class GameManager : MonoBehaviour
             if (card != null)
             {
                 card.Initialize(cardsData[index].Texture, cardsData[index].Color, cardsData[index].Id, this);
+                allCards.Add(card);
             }
             index++;
         }
@@ -198,12 +237,14 @@ public class GameManager : MonoBehaviour
         if (cardA == null)
         {
             cardA = card;
+            SaveGame(); // Save when first card is flipped
         }
         else if (card == cardA)
         {
             // Same card clicked twice - deselect it by flipping back
             cardA.EnsureFaceDown();
             cardA = null;
+            SaveGame(); // Save when card is deselected
         }
         else if (cardB == null)
         {
@@ -231,21 +272,19 @@ public class GameManager : MonoBehaviour
     
     private IEnumerator CheckMatch(Card pairA, Card pairB)
     {
-        // Wait time for player to see both cards
         yield return new WaitForSeconds(previewTime);
         
         // Check if the cards match using their IDs
         if (pairA.GetCardId() == pairB.GetCardId())
         {
-            // Ensure both cards are face up (they should be, but guarantee it)
             pairA.EnsureFaceUp();
             pairB.EnsureFaceUp();
-            
             pairA.SetCompleted(true);
             pairB.SetCompleted(true);
             
             currentMatchedPairs++;
             AddScore(10);
+            SaveGame(); 
             CheckGameComplete();
         }
         else
@@ -266,13 +305,12 @@ public class GameManager : MonoBehaviour
             
             // Wait until both flips complete
             yield return new WaitUntil(() => flipComplete);
+            SaveGame();
         }
         
         // Remove from queue
         processingQueue.Remove((pairA, pairB));
     }
-
-    
 
     private void CheckGameComplete()
     {
@@ -282,8 +320,22 @@ public class GameManager : MonoBehaviour
 
     private void ProcessGameCompletion()
     {
-        // Game completion logic goes here
         Debug.Log("Game Completed! All pairs matched.");
+        SaveManager.DeleteSave();
+        StartCoroutine(ShowCompletionAndRestart());
+    }
+    
+    private IEnumerator ShowCompletionAndRestart()
+    {
+        if (completedText)
+            completedText.gameObject.SetActive(true);
+        
+        yield return new WaitForSeconds(1f);
+        
+        if (completedText)
+            completedText.gameObject.SetActive(false);
+        
+        NewGame();
     }
 
     public bool CanFlipCard(Card card)
@@ -291,18 +343,140 @@ public class GameManager : MonoBehaviour
         // Dont allow flipping cards that are in the processing queue
         return !IsCardInQueue(card);
     }
+    
+    public void NewGame()
+    {
+        // only set the new grid fields if they are valid
+        if (GridXInput &&  GridYInput)
+        {
+            Debug.Log("New Game Started!" + GridXInput.text + "x" + GridYInput.text);
+            var gridXValue = int.TryParse(GridXInput.text, out gridX) ? gridX : -1;
+            if (gridXValue != -1)
+                gridX = gridXValue;
+            
+            var gridYValue = int.TryParse(GridYInput.text, out gridY) ? gridY : -1;
+            if (gridYValue != -1)
+                gridY = gridYValue;
+        }
+        
+        // Clear existing cards
+        foreach (var card in allCards)
+        {
+            if (card != null)
+                Destroy(card.gameObject);
+        }
+        allCards.Clear();
+        
+        // Delete save and start new game
+        SaveManager.DeleteSave();
+        StartNewGame();
+    }
+    
+    private void SaveGame()
+    {
+        GameSaveData saveData = new GameSaveData
+        {
+            score = score,
+            gridX = gridX,
+            gridY = gridY,
+            cardSpacing = cardSpacing,
+            currentMatchedPairs = currentMatchedPairs
+        };
+
+        for (int i = 0; i < allCards.Count; i++)
+        {
+            Card card = allCards[i];
+            CardSaveData cardData = new CardSaveData
+            {
+                guid = card.GetCardId().ToString(),
+                textureIndex = cardTextureIndices[i],
+                color = card.GetCardColor(),
+                position = card.transform.position,
+                isCompleted = card.IsCompleted(),
+                isFaceUp = card.GetFaceState() == CardFaceState.FaceUp
+            };
+            saveData.cards.Add(cardData);
+        }
+
+        SaveManager.SaveGame(saveData);
+    }
+    
+    private void LoadGame()
+    {
+        GameSaveData saveData = SaveManager.LoadGame();
+        if (saveData == null)
+        {
+            StartNewGame();
+            return;
+        }
+
+        // Load grid settings
+        gridX = saveData.gridX;
+        gridY = saveData.gridY;
+        cardSpacing = saveData.cardSpacing;
+        score = saveData.score;
+        currentMatchedPairs = saveData.currentMatchedPairs;
+        pairsNeededToWin = (gridX * gridY) / 2;
+
+        // Spawn cards from save data all cards start face-up for preview
+        allCards.Clear();
+        cardTextureIndices.Clear();
+
+        foreach (CardSaveData cardData in saveData.cards)
+        {
+            Guid cardGuid = Guid.Parse(cardData.guid);
+            Texture2D texture = cardTextures != null && cardData.textureIndex < cardTextures.Length 
+                ? cardTextures[cardData.textureIndex] 
+                : null;
+
+            // Spawn all cards faceup initially for preview
+            var cardObj = Instantiate(cardPrefab, cardData.position, 
+                Quaternion.Euler(0, 180, 0), transform);
+            var card = cardObj.GetComponent<Card>();
+
+            if (card != null)
+            {
+                card.Initialize(texture, cardData.color, cardGuid, this);
+                card.SetCompleted(cardData.isCompleted);
+                card.GameLock = true; // Lock cards during preview
+                allCards.Add(card);
+                cardTextureIndices.Add(cardData.textureIndex);
+                Debug.Log($"Loaded card with GUID: {cardGuid}");
+            }
+        }
+
+        // After preview duration, flip noncompleted cards back to facedown
+        Invoke(nameof(FlipNonCompletedCardsDown), preGameDuration);
+
+        UpdateUI();
+        Debug.Log("Game loaded successfully!");
+    }
+    
+    private void FlipNonCompletedCardsDown()
+    {
+        foreach (var card in allCards)
+        {
+            if (!card.IsCompleted())
+            {
+                card.FlipCard();
+            }
+            card.GameLock = false; // Unlock all cards for play
+        }
+    }
 
     private readonly struct CardData
     {
         public readonly Texture2D Texture;
         public readonly Color Color;
         public readonly Guid Id;
+        public readonly int TextureIndex;
 
-        public CardData(Texture2D texture, Color color,  Guid id)
+        public CardData(Texture2D texture, Color color, Guid id, int textureIndex)
         {
             Texture = texture;
             Color = color;
             Id = id;
+            TextureIndex = textureIndex;
         }
     }
 
@@ -353,4 +527,16 @@ public class GameManager : MonoBehaviour
     }
 
     #endregion
+    
+    public void BackToMenu()
+    {
+        if (SceneManager.GetSceneByName("MainMenuScene").IsValid() || Application.CanStreamedLevelBeLoaded("MainMenuScene"))
+        {
+            SceneManager.LoadScene("MainMenuScene");
+        }
+        else
+        {
+            Debug.LogError("Scene 'MainMenuScene' not found in Build Settings!");
+        }
+    }
 }
