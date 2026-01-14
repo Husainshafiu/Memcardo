@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
@@ -311,6 +312,7 @@ public class GameManager : MonoBehaviour
     {
         score += pointsToAdd;
         UpdateUI();
+        StartCoroutine(ScoreBounceAnimation(scoreText));
     }
 
     private void UpdateUI()
@@ -319,6 +321,35 @@ public class GameManager : MonoBehaviour
         {
             scoreText.SetText(score.ToString());
         }
+    }
+    
+    private IEnumerator ScoreBounceAnimation(TextMeshProUGUI text)
+    {
+        if (!text) yield break;
+        
+        Transform textTransform = text.transform;
+        Vector3 originalScale = textTransform.localScale;
+        Quaternion originalRotation = textTransform.localRotation;
+        
+        float duration = 0.2f;
+        float elapsed = 0f;
+        
+        // Random rotation angle
+        float randomRotation = Random.Range(-15f, 15f);
+        
+        // Scale up and rotate
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / duration;
+            float bounce = 1f + (Mathf.Sin(t * Mathf.PI) * 1f);
+            textTransform.localScale = originalScale * bounce;
+            textTransform.localRotation = Quaternion.Euler(0, 0, randomRotation * (1f - t));
+            yield return null;
+        }
+        
+        textTransform.localScale = originalScale;
+        textTransform.localRotation = originalRotation;
     }
 
     #endregion
