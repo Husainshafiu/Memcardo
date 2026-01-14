@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public enum CardFaceState
 {
@@ -17,6 +18,10 @@ public class Card : MonoBehaviour
     private bool isCompleted = false;
     private CardFaceState faceState = CardFaceState.FaceDown;
 
+    [Header("Audio")]
+    public AudioClip[] flipSounds;
+    private AudioSource audioSource;
+
     private GameManager gameManagerRef;
 
     // this will act as a bool that prevents users from clikcing the card whne the game starts
@@ -28,6 +33,18 @@ public class Card : MonoBehaviour
     public Guid GetCardId() { return cardId; }
     public Color GetCardColor() { return cardColor; }
     public CardFaceState GetFaceState() { return faceState; }
+
+    private void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+        audioSource.volume = 0.3f;
+        audioSource.pitch = 1.5f;
+    }
+
     
     public void Initialize(Texture2D texture, Color color, Guid Id, GameManager gameManager)
     {
@@ -102,6 +119,12 @@ public class Card : MonoBehaviour
     IEnumerator Flip(Action onComplete = null)
     {
         isFlipping = true;
+        if (flipSounds != null && flipSounds.Length > 0 && audioSource != null)
+        {
+            int randomIndex = Random.Range(0, flipSounds.Length);
+            audioSource.PlayOneShot(flipSounds[randomIndex]);
+        }
+
         var rotated = 0f;
         while (rotated < 180f)
         {

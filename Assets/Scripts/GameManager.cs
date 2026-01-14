@@ -46,6 +46,12 @@ public class GameManager : MonoBehaviour
     public TMP_InputField GridYInput;
     public TextMeshProUGUI completedText;
     
+    [Header("Audio")]
+    public AudioClip[] matchSounds;
+    public AudioClip[] mismatchSounds;
+    public AudioClip[] completeSounds;
+    private AudioSource audioSource;
+    
     
     private void OnValidate()
     {
@@ -63,11 +69,19 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        //UI related code
         scoreText = GameObject.Find("ScoreText").GetComponent<TextMeshProUGUI>();
         
         if (completedText)
             completedText.gameObject.SetActive(false);
+        
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.volume = 0.3f;
+        audioSource.pitch = 1.5f;
         
         // Check if save exists
         if (SaveManager.SaveExists())
@@ -277,6 +291,13 @@ public class GameManager : MonoBehaviour
         // Check if the cards match using their IDs
         if (pairA.GetCardId() == pairB.GetCardId())
         {
+            // Play match sound
+            if (matchSounds != null && matchSounds.Length > 0 && audioSource != null)
+            {
+                int randomIndex = Random.Range(0, matchSounds.Length);
+                audioSource.PlayOneShot(matchSounds[randomIndex]);
+            }
+            
             pairA.EnsureFaceUp();
             pairB.EnsureFaceUp();
             pairA.SetCompleted(true);
@@ -289,6 +310,13 @@ public class GameManager : MonoBehaviour
         }
         else
         {
+            // Play mismatch sound
+            if (mismatchSounds != null && mismatchSounds.Length > 0 && audioSource != null)
+            {
+                int randomIndex = Random.Range(0, mismatchSounds.Length);
+                audioSource.PlayOneShot(mismatchSounds[randomIndex]);
+            }
+            
             bool flipComplete = false;
             int flipsCompleted = 0;
             
@@ -321,6 +349,14 @@ public class GameManager : MonoBehaviour
     private void ProcessGameCompletion()
     {
         Debug.Log("Game Completed! All pairs matched.");
+        
+        // Play completion sound
+        if (completeSounds != null && completeSounds.Length > 0 && audioSource != null)
+        {
+            int randomIndex = Random.Range(0, completeSounds.Length);
+            audioSource.PlayOneShot(completeSounds[randomIndex]);
+        }
+        
         SaveManager.DeleteSave();
         StartCoroutine(ShowCompletionAndRestart());
     }

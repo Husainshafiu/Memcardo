@@ -505,6 +505,11 @@ MonoBehaviour:
   GridXInput: {fileID: 71182166}
   GridYInput: {fileID: 567213450}
   completedText: {fileID: 1852002771}
+  matchSounds:
+  - {fileID: 8300000, guid: 5ffe058a4a56cfd44bfabf0f7deff4ee, type: 3}
+  mismatchSounds:
+  - {fileID: 8300000, guid: 15de128fa5ddcb646b885f4076f218d5, type: 3}
+  completeSounds: []
 --- !u!1 &176455682
 GameObject:
   m_ObjectHideFlags: 0

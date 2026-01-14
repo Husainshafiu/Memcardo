@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 1101233558763211125}
   m_LocalRotation: {x: 0, y: 0, z: 1, w: 0}
   m_LocalPosition: {x: 0, y: -0.2, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1.0177, y: 1.0177, z: 1.0177}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4774287242017125607}
@@ -146,6 +146,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   flipSpeed: 750
+  flipSounds:
+  - {fileID: 8300000, guid: 40fe35ce8bd76dd4da39ebc2b35487e9, type: 3}
+  - {fileID: 8300000, guid: 96f46db69663be443ab88b7a6ba84722, type: 3}
+  - {fileID: 8300000, guid: e71ad1e4fc7815847b7ec1ca6100dd2f, type: 3}
+  - {fileID: 8300000, guid: 5fb1ffda2e073c0408cafe1582541282, type: 3}
+  - {fileID: 8300000, guid: 0f87f8ba9521dd140a62399739a7680e, type: 3}
+  - {fileID: 8300000, guid: 0839fe8ced7ffa24aaa102dda3d70895, type: 3}
   GameLock: 1
 --- !u!65 &4873379802442493921
 BoxCollider:
