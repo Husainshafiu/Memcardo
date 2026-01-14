@@ -1,14 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
 {
     [Header("Game Settings")]
-    [SerializeField] private float PreGameDuration = 2f;
+    public float previewTime = 0.1f;
+    public float preGameDuration = 2f;
     
     [Header("Grid Settings")]
     [SerializeField] private int gridX = 4;
@@ -27,8 +27,10 @@ public class GameManager : MonoBehaviour
 
     private Card cardA = null;
     private Card cardB = null;
-    private bool isProcessing = false;
+    private List<(Card cardA, Card cardB)> processingQueue = new List<(Card, Card)>();
     
+    private int pairsNeededToWin = -1;
+    private int currentMatchedPairs = -1;
     private Vector2 lastViewportSize;
     
     private void OnValidate()
@@ -62,7 +64,11 @@ public class GameManager : MonoBehaviour
         FitCameraToGrid();
         
         // Flip all cards after the game duration to begin the game
-        Invoke(nameof(CallAllCardsToFlip), PreGameDuration);
+        Invoke(nameof(CallAllCardsToFlip), preGameDuration);
+
+        // this sets the points needed to win and resets the current matched pairs for starting the game
+        pairsNeededToWin = totalCards / 2;
+        currentMatchedPairs = 0;
     }
 
     void CallAllCardsToFlip()
@@ -178,54 +184,74 @@ public class GameManager : MonoBehaviour
    
     public void OnCardFlipped(Card card)
     {
-        Debug.Log("OnCardFlipped: " + card.GetCardId());
-        // Prevent multiple cards being flipped during comparison
-        if (isProcessing) return;
-        
-        // First card flipped
+        if (IsCardInQueue(card)) return;
         if (cardA == null)
         {
             cardA = card;
-            Debug.Log("cardA: " + cardA.GetCardId());
         }
-        // Second card flipped
         else if (cardB == null && card != cardA)
         {
             cardB = card;
-            Debug.Log("cardB: " + cardB.GetCardId());
-            StartCoroutine(CheckMatch());
+            
+            // Add pair to queue and start processing
+            processingQueue.Add((cardA, cardB));
+            StartCoroutine(CheckMatch(cardA, cardB));
+            
+            // Reset for next pair immediately
+            cardA = null;
+            cardB = null;
         }
     }
     
-    private IEnumerator CheckMatch()
+    private bool IsCardInQueue(Card card)
     {
-        isProcessing = true;
-        // Wait a moment so player can see both cards
-        yield return new WaitForSeconds(1f);
+        foreach (var pair in processingQueue)
+        {
+            if (pair.cardA == card || pair.cardB == card)
+                return true;
+        }
+        return false;
+    }
+    
+    private IEnumerator CheckMatch(Card pairA, Card pairB)
+    {
+        // Wait time for player to see both cards
+        yield return new WaitForSeconds(previewTime);
         
         // Check if the cards match using their IDs
-        if (cardA.GetCardId() == cardB.GetCardId())
+        if (pairA.GetCardId() == pairB.GetCardId())
         {
-            cardA.SetCompleted(true);
-            cardB.SetCompleted(true);
-            Debug.Log("Match found: " + cardA.GetCardId() + " and " + cardB.GetCardId());
+            pairA.SetCompleted(true);
+            pairB.SetCompleted(true);
+            currentMatchedPairs++;
+            CheckGameComplete();
         }
         else
         {
-            cardA.FlipCard();
-            cardB.FlipCard();
-            Debug.Log("No match found: " + cardA.GetCardId() + " and " + cardB.GetCardId());
+            pairA.FlipCard();
+            pairB.FlipCard();
         }
         
-        // Reset for next pair
-        cardA = null;
-        cardB = null;
-        isProcessing = false;
+        // Remove from queue
+        processingQueue.Remove((pairA, pairB));
     }
 
-    public bool CanFlipCard()
+    private void CheckGameComplete()
     {
-        return !isProcessing && (cardA == null || cardB == null);
+        if (currentMatchedPairs == pairsNeededToWin)
+            ProcessGameCompletion();
+    }
+
+    private void ProcessGameCompletion()
+    {
+        // Game completion logic goes here
+        Debug.Log("Game Completed! All pairs matched.");
+    }
+
+    public bool CanFlipCard(Card card)
+    {
+        // Dont allow flipping cards that are in the processing queue
+        return !IsCardInQueue(card);
     }
 
     private readonly struct CardData

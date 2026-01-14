@@ -51,7 +51,11 @@ public class Card : MonoBehaviour
         // checks if items should be clickable
         if (GameLock) return;
         
-        if (gameManagerRef.CanFlipCard())  // Check BEFORE flipping
+        // Don't allow flipping if already flipping or completed
+        if (isFlipping || isCompleted) return;
+        
+        // Check with GameManager if this specific card can be flipped
+        if (gameManagerRef.CanFlipCard(this))
         {
             StartCoroutine(FlipAndNotify());
         }
