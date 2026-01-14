@@ -500,10 +500,11 @@ MonoBehaviour:
   - {r: 0.745283, g: 0.25663045, b: 0.5535601, a: 0}
   - {r: 0.12517802, g: 0.4569339, b: 0.9150943, a: 0}
   mainCamera: {fileID: 570771124}
-  cameraPadding: 1
+  cameraPadding: 4
   cameraOffset: {x: 0, y: 0}
   GridXInput: {fileID: 71182166}
   GridYInput: {fileID: 567213450}
+  completedText: {fileID: 1852002771}
 --- !u!1 &176455682
 GameObject:
   m_ObjectHideFlags: 0
@@ -2700,7 +2701,7 @@ GameObject:
   - component: {fileID: 1852002772}
   - component: {fileID: 1852002771}
   m_Layer: 5
-  m_Name: Text (TMP)
+  m_Name: TXT_Completed
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2860,7 +2861,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -50, y: -103.2}
+  m_AnchoredPosition: {x: -379, y: -52.5}
   m_SizeDelta: {x: 207.65, y: 50}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &2022048122
